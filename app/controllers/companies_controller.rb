@@ -6,7 +6,7 @@ class CompaniesController < ApplicationController
   end
 
   def new
-    @company = Company.new
+    @company ||= Company.new
   end
 
   def show
@@ -15,7 +15,7 @@ class CompaniesController < ApplicationController
   def create
     @company = Company.new(company_params)
     if @company.save
-      redirect_to companies_path, notice: "Saved"
+      redirect_to companies_path, flash: { notice: "Saved" }
     else
       render :new
     end
@@ -25,12 +25,25 @@ class CompaniesController < ApplicationController
   end
 
   def update
-    if @company.update(company_params)
-      redirect_to companies_path, notice: "Changes Saved"
-    else
-      render :edit
+    respond_to do |format|
+      if @company.update(company_params)
+        format.html { redirect_to companies_path, flash: { notice: "Changes Saved" }}
+        format.json { head :ok }
+      else
+        format.html { render :edit }
+        format.json { head :bad_request }
+      end
     end
-  end  
+  end
+
+  def destroy
+    redirect_args = if @company.destroy
+      {flash: { success: 'Company was successfully deleted' }}
+    else
+      {flash: { error: 'Unable to delete company' }}
+    end
+    redirect_to companies_path, **redirect_args
+  end
 
   private
 
@@ -43,6 +56,7 @@ class CompaniesController < ApplicationController
       :phone,
       :email,
       :owner_id,
+      :brand_color,
       services: []
     )
   end
@@ -50,5 +64,4 @@ class CompaniesController < ApplicationController
   def set_company
     @company = Company.find(params[:id])
   end
-  
 end
